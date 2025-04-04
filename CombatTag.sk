@@ -1,0 +1,64 @@
+
+
+on damage of a player:
+    attacker is a player
+    {actplus.immune.%victim's uuid%} is not 1:
+        {actplus.time.%victim's uuid%} is not set:
+            send "&6[&c&lACT&e+&6]&c You are now in combat. Do not log out." to victim
+        set {actplus.time.%victim's uuid%} to 12
+        set {actplus.combatant.%victim's uuid%} to "%attacker%"
+    {actplus.immune.%attacker's uuid%} is not 1:
+        {actplus.time.%attacker's uuid%} is not set:
+            send "&6[&c&lACT&e+&6]&c You are now in combat. Do not log out." to attacker
+        set {actplus.time.%attacker's uuid%} to 7
+        set {actplus.combatant.%attacker's uuid%} to "%victim%"
+
+every 2 ticks:
+    loop all players where [{actplus.time.%player input's uuid%} exists]:
+        {actplus.time.%loop-player's uuid%} is less than 0.1:
+            send action bar "&aYou are no longer in combat." to loop-player
+            send "&6[&c&lACT&e+&6]&a You are no longer in combat." to loop-player
+            delete {actplus.time.%loop-player's uuid%}
+            delete {actplus.combatant.%loop-player's uuid%}
+        {actplus.time.%loop-player's uuid%} is greater than 0:
+            send action bar "&cYou are in combat for %{actplus.time.%loop-player's uuid%}% seconds (%{actplus.combatant.%loop-player's uuid%}%)" to loop-player
+            subtract 0.1 from {actplus.time.%loop-player's uuid%}
+
+on command:
+    {actplus.time.%player's uuid%} is set
+    player does not have the permission "actplus.immune":
+        send "&6[&c&lACT&e+&6]&c You cannot execute commands in combat." to player
+        cancel event
+        stop
+    command is not "actimmune":
+        send "&6[&c&lACT&e+&6]&c You cannot usually execute commands in combat." to player
+        send "&6[&c&lACT&e+&6]&a You have the ability to escape combat with /actimmune." to player
+        cancel event
+
+on quit:
+    {actplus.time.%player's uuid%} exists
+    kill player
+    broadcast "&6[&c&lACT&e+&6]&c&l %player%&c logged out while fighting &l%{actplus.combatant.%player's uuid%}%"
+
+on death of a player:
+    wait 1 tick
+    {actplus.time.%victim's uuid%} exists
+    set {actplus.time.%victim's uuid%} to 0
+
+on join:
+    {actplus.immune.%player's uuid%} exists:
+        send "&6[&c&lACT&e+&6]&a You're currently immune to combat tag. Disable with /actimmune" to player
+
+command /actimmune:
+    permission: actplus.immune
+    permission message: &6[&c&lACT&e+&6]&c Permission required: actplus.immune
+    trigger:
+        {actplus.immune.%player's uuid%} exists:
+            delete {actplus.immune.%player's uuid%}
+            send "&6[&c&lACT&e+&6]&a You are no longer immune to combat tag." to player
+            stop
+        {actplus.immune.%player's uuid%} is not set:
+            set {actplus.immune.%player's uuid%} to 1
+            send "&6[&c&lACT&e+&6]&a You are now immune to combat tag." to player
+            delete {actplus.time.%player's uuid%}
+            delete {actplus.combatant.%player's uuid%}
